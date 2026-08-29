@@ -3,10 +3,7 @@ import sys
 import io
 
 import torch
-import numpy as np
-
 from PIL import Image
-
 from torchvision import transforms
 
 from skimage.metrics import (
@@ -15,7 +12,7 @@ from skimage.metrics import (
 )
 
 # -------------------------------------------------------
-# Add Project Root to Python Path
+# Project Root
 # -------------------------------------------------------
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -42,6 +39,7 @@ DEVICE = torch.device(
     "cuda" if torch.cuda.is_available() else "cpu"
 )
 
+
 # -------------------------------------------------------
 # Model Path
 # -------------------------------------------------------
@@ -52,6 +50,7 @@ MODEL_PATH = os.path.join(
     "adversarial_best.pth"
 )
 
+
 # -------------------------------------------------------
 # Transform
 # -------------------------------------------------------
@@ -61,8 +60,13 @@ transform = transforms.Compose([
     transforms.ToTensor()
 ])
 
+
 _model = None
 
+
+# -------------------------------------------------------
+# Load Model
+# -------------------------------------------------------
 
 def load_model():
 
@@ -70,12 +74,22 @@ def load_model():
 
     if _model is None:
 
+        if not os.path.exists(MODEL_PATH):
+            raise FileNotFoundError(
+                f"Model checkpoint not found: {MODEL_PATH}"
+            )
+
         model = SteganographyModel()
 
         checkpoint = torch.load(
             MODEL_PATH,
-            map_location=DEVICE
+            map_location=DEVICE,
+            weights_only=True
         )
+
+        # Handle checkpoint formats
+        if isinstance(checkpoint, dict) and "state_dict" in checkpoint:
+            checkpoint = checkpoint["state_dict"]
 
         model.load_state_dict(checkpoint)
 
@@ -86,7 +100,9 @@ def load_model():
         _model = model
 
     return _model
-    # -------------------------------------------------------
+
+
+# -------------------------------------------------------
 # PIL Image -> Tensor
 # -------------------------------------------------------
 
@@ -128,7 +144,7 @@ def hide_secret(cover_image, secret_image):
 
     secret = image_to_tensor(secret_image)
 
-    with torch.no_grad():
+    with torch.inference_mode():
 
         stego, recovered = model(
             cover,
@@ -138,10 +154,10 @@ def hide_secret(cover_image, secret_image):
     return (
         tensor_to_image(stego),
         tensor_to_image(recovered),
-        cover.squeeze(0),
-        secret.squeeze(0),
-        stego.squeeze(0),
-        recovered.squeeze(0)
+        cover.squeeze(0).cpu(),
+        secret.squeeze(0).cpu(),
+        stego.squeeze(0).cpu(),
+        recovered.squeeze(0).cpu()
     )
 
 
@@ -190,66 +206,30 @@ def calculate_ssim(original, generated):
 # Evaluation
 # -------------------------------------------------------
 
-def evaluate(
-    cover,
-    secret,
-    stego,
-    recovered
-):
+def evaluate(cover, secret, stego, recovered):
 
     return {
 
         "cover_psnr": round(
-            calculate_psnr(
-                cover,
-                stego
-            ),
+            calculate_psnr(cover, stego),
             2
         ),
 
         "cover_ssim": round(
-            calculate_ssim(
-                cover,
-                stego
-            ),
+            calculate_ssim(cover, stego),
             4
         ),
 
         "secret_psnr": round(
-            calculate_psnr(
-                secret,
-                recovered
-            ),
+            calculate_psnr(secret, recovered),
             2
         ),
 
         "secret_ssim": round(
-            calculate_ssim(
-                secret,
-                recovered
-            ),
+            calculate_ssim(secret, recovered),
             4
         )
     }
-
-
-# -------------------------------------------------------
-# Save Image
-# -------------------------------------------------------
-
-def save_image(image, filename):
-
-    os.makedirs("results", exist_ok=True)
-
-    path = os.path.join(
-        PROJECT_ROOT,
-        "results",
-        filename
-    )
-
-    image.save(path)
-
-    return path
 
 
 # -------------------------------------------------------

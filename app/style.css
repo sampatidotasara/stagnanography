@@ -1,0 +1,55 @@
+/* Main background */
+.stApp{
+    background:#0F172A;
+}
+
+/* Main content */
+.block-container{
+    padding-top:2rem;
+    padding-bottom:2rem;
+    max-width:1200px;
+}
+
+/* Title */
+.main-title{
+    text-align:center;
+    font-size:42px;
+    font-weight:700;
+    color:white;
+}
+
+.subtitle{
+    text-align:center;
+    color:#cbd5e1;
+    margin-bottom:30px;
+}
+
+/* Card */
+.card{
+    background:#1E293B;
+    padding:20px;
+    border-radius:15px;
+    border:1px solid #334155;
+}
+
+/* Buttons */
+.stButton>button{
+    width:100%;
+    height:50px;
+    border-radius:12px;
+    font-size:18px;
+    font-weight:bold;
+}
+
+/* Metrics */
+div[data-testid="stMetric"]{
+    background:#1E293B;
+    padding:20px;
+    border-radius:15px;
+    text-align:center;
+}
+
+/* Images */
+img{
+    border-radius:12px;
+}

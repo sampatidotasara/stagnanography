@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+
+checkpoints/*.pth
+checkpoints/*.pt
+
+data/
+dataset/
+results/
+
+.env
